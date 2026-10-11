@@ -1,0 +1,14 @@
+/target/
+/.cache/
+**/__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.nxl
+*.sqlite3*
+local-ai.json
+running.json
+/dictionaries/mozc-ja.tsv

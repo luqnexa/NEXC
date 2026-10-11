@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = ["crates/nexc-core", "crates/nexc-lite", "crates/nexc-max", "crates/nextime-dict"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "AGPL-3.0-only"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[workspace.dependencies]
+nexc-core = { path = "crates/nexc-core" }
+nexc-lite = { path = "crates/nexc-lite" }
+nexc-max = { path = "crates/nexc-max" }
+nextime-dict = { path = "crates/nextime-dict" }

@@ -1,0 +1,19 @@
+[package]
+name = "nexc-lite"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+nextime-dict.workspace = true
+nexc-core.workspace = true
+
+[dev-dependencies]
+nexc-max.workspace = true
+
+[[bench]]
+name = "nexc"
+path = "../../benchmarks/nexc.rs"
+harness = false
+
