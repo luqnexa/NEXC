@@ -13,6 +13,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -21,3 +24,13 @@ jobs:
       - run: cargo test --workspace --locked
       - run: cargo build --workspace --release --locked
       - run: cargo bench -p nexc-lite --bench nexc --locked -- --entries 1000 --iterations 100
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.85.0'
+      - run: cargo test --workspace --locked
