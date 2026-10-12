@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Hand-authored spellings and readings; illustrative weights, not corpus frequencies.
 # Curated starter overlay, not an exhaustive list of people, places or products.
+# Attested compounds retain their word boundary; do not infer arbitrary noun pairs.
+あなるせっくす	アナルセックス	sahen	6500
+せっくす	セックス	sahen	6500
+べんきょう	勉強	sahen	8000
+けんさく	検索	sahen	6500
 chatgpt	chatgpt	english	15000
 openai	openai	english	15000
 codex	codex	english	15000
@@ -175,6 +180,7 @@ zoom	zoom	english	15000
 あいが	AIが	phrase	24000
 あいは	AIは	phrase	24000
 あいを	AIを	phrase	24000
+あいを	愛を	phrase	24000
 あいに	AIに	phrase	24000
 あいで	AIで	phrase	24000
 あいと	AIと	phrase	24000
@@ -205,3 +211,67 @@ zoom	zoom	english	15000
 あいを利用	AIを利用	phrase	24000
 あいを活用	AIを活用	phrase	24000
 あいを学習	AIを学習	phrase	24000
+あいをたしかめたい	AIを確かめたい	phrase	24000
+あいをたしかめたい	愛を確かめたい	phrase	24000
+あいをたしかめる	AIを確かめる	phrase	24000
+あいをたしかめる	愛を確かめる	phrase	24000
+あいをかくにんしたい	AIを確認したい	phrase	24000
+つかめ	掴め	verb	6500
+つかめ	つかめ	verb	6400
+はしでごはんをたべる	箸でご飯を食べる	phrase	7000
+はしをわたる	橋を渡る	phrase	7000
+きかいをつかう	機械を使う	phrase	7000
+きかいにめぐまれた	機会に恵まれた	phrase	7000
+あいをあいようしている	AIを愛用している	phrase	7000
+あいをたいせつにする	愛を大切にする	phrase	7000
+pythonでかくほうがいい	Pythonで書くほうがいい	phrase	7000
+きょうはくもりです	今日は曇りです	phrase	7000
+あたらしいきかいをこうにゅうする	新しい機械を購入する	phrase	7000
+あめがふっている	雨が降っている	phrase	7000
+あめをなめる	飴を舐める	phrase	7000
+あいをけんきゅうする	AIを研究する	phrase	7000
+あいをつたえる	愛を伝える	phrase	7000
+あいをつかむ	愛を掴む	phrase	7000
+さいしんのぎじゅつであるAIをつかむ	最新の技術であるAIを掴む	phrase	7000
+わたしはにほんごがすきです	私は日本語が好きです	phrase	7000
+あしたはがっこうにいきます	明日は学校に行きます	phrase	7000
+きのうかったほんをよむ	昨日買った本を読む	phrase	7000
+かれはながいはなしをした	彼は長い話をした	phrase	7000
+Pythonであいをつくる	PythonでAIを作る	phrase	7000
+Rustでぷろぐらむをかく	Rustでプログラムを書く	phrase	7000
+GitHubにりぽじとりをこうかい	GitHubにリポジトリを公開	phrase	7000
+Windowsであぷりをかいはつ	Windowsでアプリを開発	phrase	7000
+CPUとGPUのせいのうをくらべる	CPUとGPUの性能を比べる	phrase	7000
+あしたそうるにいく	明日ソウルに行く	phrase	7000
+bonjourってどういういみ	bonjourってどういう意味	phrase	7000
+わたしはあいをべんきょうしている	私はAIを勉強している	phrase	7000
+つくえのはしにおく	机の端に置く	phrase	7000
+にほんごと한국어をまぜる	日本語と한국어を混ぜる	phrase	7000
+きかいにあった	機会にあった	phrase	5500
+このもんだいわかいけつする	この問題は解決する	phrase	5500
+
+# Reviewed symbols, emoji and Korean greeting aliases. Ranking weights, not corpus counts.
+まるいち	①	noun	1000000
+まるに	②	noun	1000000
+まるさん	③	noun	1000000
+まるよん	④	noun	1000000
+まるご	⑤	noun	1000000
+まるろく	⑥	noun	1000000
+まるなな	⑦	noun	1000000
+まるはち	⑧	noun	1000000
+まるきゅう	⑨	noun	1000000
+まるじゅう	⑩	noun	1000000
+やじるし	→	noun	1000000
+みぎやじるし	→	noun	1000000
+ひだりやじるし	←	noun	1000000
+ほしきごう	★	noun	1000000
+はーときごう	♡	noun	1000000
+えがおえもじ	😊	noun	1000000
+わらいえもじ	😂	noun	1000000
+はーとえもじ	❤️	noun	1000000
+おやゆびえもじ	👍	noun	1000000
+おじぎえもじ	🙇	noun	1000000
+あにゅはせよ	안녕하세요	noun	1000000
+あんにょんはせよ	안녕하세요	noun	1000000
+はあときごう	♡	noun	1000000
+はあとえもじ	❤️	noun	1000000
