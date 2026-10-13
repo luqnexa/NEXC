@@ -190,6 +190,47 @@ impl FileDictionary {
 }
 
 impl DictionarySource for FileDictionary {
+    fn lookup_batch(
+        &self,
+        readings: &[&str],
+        limit: usize,
+    ) -> Result<Vec<Vec<Entry>>, LookupError> {
+        if readings.len() > 128 {
+            return Err(LookupError("batch exceeds 128 readings".into()));
+        }
+        let mut result = vec![Vec::new(); readings.len()];
+        if limit == 0 {
+            return Ok(result);
+        }
+        let mut groups = std::collections::BTreeMap::<usize, Vec<usize>>::new();
+        for (query, reading) in readings.iter().enumerate() {
+            let start = self
+                .index
+                .partition_point(|block| block.last.as_str() < *reading);
+            for (offset, _) in self.index[start..]
+                .iter()
+                .take_while(|block| block.first.as_str() <= *reading)
+                .enumerate()
+            {
+                groups.entry(start + offset).or_default().push(query);
+            }
+        }
+        for (block, queries) in groups {
+            let entries = self
+                .read_block(&self.index[block])
+                .map_err(|e| LookupError(e.to_string()))?;
+            for query in queries {
+                result[query].extend(
+                    entries
+                        .iter()
+                        .filter(|entry| entry.reading == readings[query])
+                        .cloned(),
+                );
+                sort_matches(&mut result[query], limit);
+            }
+        }
+        Ok(result)
+    }
     fn predict(&self, prefix: &str, limit: usize) -> Result<Vec<Entry>, LookupError> {
         if prefix.is_empty() || limit == 0 {
             return Ok(Vec::new());

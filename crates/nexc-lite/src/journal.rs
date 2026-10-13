@@ -174,6 +174,41 @@ fn key(entry: &Entry) -> Key {
 }
 
 impl DictionarySource for LiteDictionary {
+    fn lookup_batch(
+        &self,
+        readings: &[&str],
+        limit: usize,
+    ) -> Result<Vec<Vec<Entry>>, LookupError> {
+        if readings.len() > 128 {
+            return Err(LookupError("batch exceeds 128 readings".into()));
+        }
+        let has_overlay: Vec<_> = readings
+            .iter()
+            .map(|reading| {
+                self.words
+                    .range(((*reading).to_owned(), String::new(), String::new())..)
+                    .next()
+                    .is_some_and(|(key, _)| key.0 == *reading)
+            })
+            .collect();
+        let plain: Vec<_> = readings
+            .iter()
+            .zip(&has_overlay)
+            .filter_map(|(reading, present)| (!present).then_some(*reading))
+            .collect();
+        let mut base = self.base.lookup_batch(&plain, limit)?.into_iter();
+        readings
+            .iter()
+            .zip(has_overlay)
+            .map(|(reading, present)| {
+                if present {
+                    self.lookup(reading, limit).map(Cow::into_owned)
+                } else {
+                    Ok(base.next().unwrap())
+                }
+            })
+            .collect()
+    }
     fn predict(&self, prefix: &str, limit: usize) -> Result<Vec<Entry>, LookupError> {
         if prefix.is_empty() || limit == 0 {
             return Ok(Vec::new());

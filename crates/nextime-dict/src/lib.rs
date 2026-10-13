@@ -5,6 +5,21 @@ use std::{borrow::Cow, error::Error, fmt};
 
 /// Common interface for memory-resident and compressed disk dictionaries.
 pub trait DictionarySource: fmt::Debug + Send + Sync {
+    /// Batch equivalent of lookup, in input order, at most 128 readings.
+    /// Sources may group compressed reads without changing result semantics.
+    fn lookup_batch(
+        &self,
+        readings: &[&str],
+        limit: usize,
+    ) -> Result<Vec<Vec<Entry>>, LookupError> {
+        if readings.len() > 128 {
+            return Err(LookupError("batch exceeds 128 readings".into()));
+        }
+        readings
+            .iter()
+            .map(|reading| self.lookup(reading, limit).map(Cow::into_owned))
+            .collect()
+    }
     /// Optional bounded prefix completion; unavailable sources return no suggestions.
     fn predict(&self, _: &str, _: usize) -> Result<Vec<Entry>, LookupError> {
         Ok(Vec::new())
@@ -262,8 +277,43 @@ impl<T: DictionarySource> WithCommonPredictions<T> {
                 .expect("proper noun overlay must be valid"),
         }
     }
+    fn merge_common(&self, reading: &str, source: Vec<Entry>, limit: usize) -> Vec<Entry> {
+        let names = self.names.lookup(reading);
+        if !names.is_empty() {
+            let mut entries = source;
+            entries.extend_from_slice(names);
+            sort_matches(&mut entries, usize::MAX);
+            let mut seen = std::collections::HashSet::new();
+            entries.retain(|e| seen.insert((e.surface.clone(), e.part_of_speech.clone())));
+            entries.truncate(limit);
+            return entries;
+        }
+        if source.is_empty() {
+            return self
+                .common
+                .lookup(reading)
+                .iter()
+                .filter(|entry| matches!(entry.part_of_speech.as_str(), "english" | "slang-en"))
+                .take(limit)
+                .cloned()
+                .collect();
+        }
+        source
+    }
 }
 impl<T: DictionarySource> DictionarySource for WithCommonPredictions<T> {
+    fn lookup_batch(
+        &self,
+        readings: &[&str],
+        limit: usize,
+    ) -> Result<Vec<Vec<Entry>>, LookupError> {
+        let source = self.source.lookup_batch(readings, limit)?;
+        Ok(readings
+            .iter()
+            .zip(source)
+            .map(|(reading, entries)| self.merge_common(reading, entries, limit))
+            .collect())
+    }
     fn lookup(&self, reading: &str, limit: usize) -> Result<Cow<'_, [Entry]>, LookupError> {
         let source = self.source.lookup(reading, limit)?;
         let names = self.names.lookup(reading);
