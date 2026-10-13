@@ -32,6 +32,70 @@ pub trait DictionarySource: fmt::Debug + Send + Sync {
     fn max_reading_chars(&self) -> usize;
 }
 
+/// Explicit read-only union. Neither source is changed or installed.
+#[derive(Debug)]
+pub struct SupplementedDictionary<A: DictionarySource, B: DictionarySource> {
+    base: A,
+    supplement: B,
+}
+impl<A: DictionarySource, B: DictionarySource> SupplementedDictionary<A, B> {
+    pub fn new(base: A, supplement: B) -> Self {
+        Self { base, supplement }
+    }
+    fn merge(mut a: Vec<Entry>, b: Vec<Entry>, limit: usize) -> Vec<Entry> {
+        a.extend(b);
+        sort_matches(&mut a, usize::MAX);
+        let mut seen = std::collections::HashSet::new();
+        a.retain(|entry| {
+            seen.insert((
+                entry.reading.clone(),
+                entry.surface.clone(),
+                entry.part_of_speech.clone(),
+            ))
+        });
+        a.truncate(limit);
+        a
+    }
+}
+impl<A: DictionarySource, B: DictionarySource> DictionarySource for SupplementedDictionary<A, B> {
+    fn lookup(&self, reading: &str, limit: usize) -> Result<Cow<'_, [Entry]>, LookupError> {
+        Ok(Cow::Owned(Self::merge(
+            self.base.lookup(reading, limit)?.into_owned(),
+            self.supplement.lookup(reading, limit)?.into_owned(),
+            limit,
+        )))
+    }
+    fn lookup_batch(
+        &self,
+        readings: &[&str],
+        limit: usize,
+    ) -> Result<Vec<Vec<Entry>>, LookupError> {
+        let a = self.base.lookup_batch(readings, limit)?;
+        let b = self.supplement.lookup_batch(readings, limit)?;
+        if a.len() != readings.len() || b.len() != readings.len() {
+            return Err(LookupError("invalid batch result length".into()));
+        }
+        Ok(a.into_iter()
+            .zip(b)
+            .map(|(a, b)| Self::merge(a, b, limit))
+            .collect())
+    }
+    fn predict(&self, prefix: &str, limit: usize) -> Result<Vec<Entry>, LookupError> {
+        let mut entries = self.base.predict(prefix, limit)?;
+        entries.extend(self.supplement.predict(prefix, limit)?);
+        sort_predictions(&mut entries, limit);
+        Ok(entries)
+    }
+    fn len(&self) -> usize {
+        self.base.len().saturating_add(self.supplement.len())
+    }
+    fn max_reading_chars(&self) -> usize {
+        self.base
+            .max_reading_chars()
+            .max(self.supplement.max_reading_chars())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LookupError(pub String);
 
@@ -230,6 +294,13 @@ impl DictionarySource for Dictionary {
 }
 
 impl<T: DictionarySource + ?Sized> DictionarySource for std::sync::Arc<T> {
+    fn lookup_batch(
+        &self,
+        readings: &[&str],
+        limit: usize,
+    ) -> Result<Vec<Vec<Entry>>, LookupError> {
+        self.as_ref().lookup_batch(readings, limit)
+    }
     fn predict(&self, prefix: &str, limit: usize) -> Result<Vec<Entry>, LookupError> {
         self.as_ref().predict(prefix, limit)
     }
@@ -362,6 +433,24 @@ impl<T: DictionarySource> DictionarySource for WithCommonPredictions<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn read_only_supplement_preserves_both_sources_and_scalar_batch_equivalence() {
+        let a = std::sync::Arc::new(Dictionary::from_tsv("a\tA\tnoun\t1\nb\tB\tnoun\t5").unwrap());
+        let b = std::sync::Arc::new(
+            Dictionary::from_tsv("a\tA\tnoun\t10\na\tOther\tnoun\t9\nc\tC\tnoun\t4").unwrap(),
+        );
+        let joined = std::sync::Arc::new(SupplementedDictionary::new(a.clone(), b.clone()));
+        assert_eq!(joined.lookup("a", 8).unwrap().len(), 2);
+        assert_eq!(joined.lookup("a", 1).unwrap()[0].frequency, 10);
+        let readings = ["c", "a", "missing", "b", "a"];
+        let scalar: Vec<_> = readings
+            .iter()
+            .map(|r| joined.lookup(r, 2).unwrap().into_owned())
+            .collect();
+        assert_eq!(joined.lookup_batch(&readings, 2).unwrap(), scalar);
+        assert_eq!(a.lookup("a", 1).unwrap()[0].frequency, 1);
+        assert_eq!(b.lookup("a", 1).unwrap()[0].frequency, 10);
+    }
 
     #[test]
     fn exact_lookup_sorted_and_deduplicated() {
